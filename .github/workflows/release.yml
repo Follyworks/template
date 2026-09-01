@@ -9,10 +9,11 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   release:
-    name: Build & draft release
+    name: Build, release, publish
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,9 +52,28 @@ jobs:
             --title "$GITHUB_REF_NAME" \
             --generate-notes \
             build/libs/*.jar
+          gh release view "$GITHUB_REF_NAME" --json body -q .body > build/changelog.md
 
-      # STUDIO-13: publishing to Modrinth and CurseForge attaches here once the project
-      # slugs exist (STUDIO-16). Add the Minotaur + CurseForgeGradle plugins to
-      # build.gradle and a `./gradlew modrinth curseforge` step, with the tokens in
-      # repository secrets. Deliberately absent until there is a project to publish to -
-      # a step that silently no-ops is worse than one that is not there.
+      # STUDIO-14: Maven artifact for anything that wants to compile against this mod.
+      - name: Publish to GitHub Packages
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./gradlew publishMavenJavaPublicationToGitHubPackagesRepository --no-daemon
+
+      # STUDIO-13: only the stores that have an id in gradle.properties. A store with an
+      # id but no token fails the job on purpose, that is a misconfiguration and it
+      # should be loud. The GitHub release stays a draft until you publish it by hand
+      # (docs/release-checklist.md), the stores go live immediately.
+      - name: Publish to Modrinth and CurseForge
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+        run: |
+          tasks=""
+          grep -qE '^modrinth_id=.+' gradle.properties && tasks="$tasks modrinth"
+          grep -qE '^curseforge_id=.+' gradle.properties && tasks="$tasks curseforge"
+          if [ -z "$tasks" ]; then
+            echo "::notice::modrinth_id and curseforge_id are empty in gradle.properties, no store publish"
+            exit 0
+          fi
+          ./gradlew $tasks -Pchangelog_file=build/changelog.md --no-daemon

@@ -5,6 +5,10 @@ plugins {
     id 'maven-publish'
     id 'net.neoforged.gradle.userdev' version '7.1.25'
     id 'com.diffplug.spotless' version '6.25.0'
+    id 'com.modrinth.minotaur' version '2.9.0'
+    // ponytail: 1.1.28 is the last CurseForgeGradle that runs on a Java 21 Gradle JVM,
+    // 1.2.30+ declare a JVM 25 floor. Bump when the studio moves its build JVM.
+    id 'net.darkhax.curseforgegradle' version '1.1.28'
 }
 
 // STUDIO-6: semver in gradle.properties, Minecraft version appended as build metadata.
@@ -116,8 +120,9 @@ tasks.withType(ProcessResources).configureEach {
     }
 }
 
-// STUDIO-14: local file repo by default. Swap the url for GitHub Packages when
-// a mod first exposes an API other mods compile against.
+// STUDIO-14: GitHub Packages, so other mods can `implementation "io.github.dizzymii.folly:<mod>:<ver>"`.
+// CI publishes on every release with the workflow's own GITHUB_TOKEN. Locally, `publish` drops
+// into ./repo instead, which is enough to test a dependency from a sibling project.
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
@@ -128,6 +133,16 @@ publishing {
         maven {
             name = 'localRepo'
             url = "file://${project.projectDir}/repo"
+        }
+        if (System.getenv('GITHUB_REPOSITORY')) {
+            maven {
+                name = 'GitHubPackages'
+                url = uri("https://maven.pkg.github.com/${System.getenv('GITHUB_REPOSITORY')}")
+                credentials {
+                    username = System.getenv('GITHUB_ACTOR')
+                    password = System.getenv('GITHUB_TOKEN')
+                }
+            }
         }
     }
 }
@@ -141,4 +156,38 @@ idea {
 
 test {
     useJUnitPlatform()
+}
+
+// STUDIO-13: store publishing. Both tasks read their project id from gradle.properties and
+// their token from the environment, and both fail loudly on a missing value. The release
+// workflow only invokes them when the id is set, so the template itself publishes nowhere.
+// Changelog comes from the GitHub release notes via -Pchangelog_file, see release.yml.
+def releaseChangelog = project.hasProperty('changelog_file')
+        ? file(project.property('changelog_file')).text
+        : "See the GitHub release for v${mod_version}."
+
+modrinth {
+    token = System.getenv('MODRINTH_TOKEN') ?: ''
+    projectId = modrinth_id
+    versionNumber = project.version
+    versionName = "${mod_name} ${mod_version} for ${minecraft_version}"
+    versionType = 'release'
+    uploadFile = tasks.jar
+    gameVersions = [minecraft_version]
+    loaders = ['neoforge']
+    changelog = releaseChangelog
+}
+
+tasks.register('curseforge', net.darkhax.curseforgegradle.TaskPublishCurseForge) {
+    group = 'publishing'
+    description = 'Upload the mod jar to CurseForge.'
+    apiToken = System.getenv('CURSEFORGE_TOKEN') ?: ''
+    def mainFile = upload(curseforge_id, tasks.jar)
+    mainFile.displayName = "${mod_name} ${mod_version} for ${minecraft_version}"
+    mainFile.releaseType = 'release'
+    mainFile.addModLoader('NeoForge')
+    mainFile.addGameVersion(minecraft_version)
+    mainFile.addJavaVersion('Java 21')
+    mainFile.changelog = releaseChangelog
+    mainFile.changelogType = 'markdown'
 }
