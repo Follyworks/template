@@ -7,6 +7,13 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: chore
+    ignore:
+      # CurseForgeGradle 1.2.30+ declares a JVM 25 floor, the build runs on 21.
+      - dependency-name: "net.darkhax.curseforgegradle"
+        versions: [">=1.2"]
+      # Gradle 9 is ahead of NeoGradle 7.1.25. Lift when NeoGradle moves.
+      - dependency-name: "gradle-wrapper"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
