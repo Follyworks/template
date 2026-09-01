@@ -16,7 +16,7 @@ jobs:
     name: Build, release, publish
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # generate-notes needs the full tag history
 
