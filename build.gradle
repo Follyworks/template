@@ -4,7 +4,7 @@ plugins {
     id 'idea'
     id 'maven-publish'
     id 'net.neoforged.gradle.userdev' version '7.1.25'
-    id 'com.diffplug.spotless' version '6.25.0'
+    id 'com.diffplug.spotless' version '8.10.1'
     id 'com.modrinth.minotaur' version '2.9.0'
     // ponytail: 1.1.28 is the last CurseForgeGradle that runs on a Java 21 Gradle JVM,
     // 1.2.30+ declare a JVM 25 floor. Bump when the studio moves its build JVM.
