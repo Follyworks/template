@@ -120,7 +120,7 @@ tasks.withType(ProcessResources).configureEach {
     }
 }
 
-// STUDIO-14: GitHub Packages, so other mods can `implementation "io.github.dizzymii.folly:<mod>:<ver>"`.
+// STUDIO-14: GitHub Packages, so other mods can `implementation "io.github.follyworks:<mod>:<ver>"`.
 // CI publishes on every release with the workflow's own GITHUB_TOKEN. Locally, `publish` drops
 // into ./repo instead, which is enough to test a dependency from a sibling project.
 publishing {

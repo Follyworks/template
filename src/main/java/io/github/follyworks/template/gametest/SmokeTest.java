@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
-package io.github.dizzymii.folly.template.gametest;
+package io.github.follyworks.template.gametest;
 
-import io.github.dizzymii.folly.template.TemplateMod;
+import io.github.follyworks.template.TemplateMod;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;

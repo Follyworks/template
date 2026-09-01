@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT */
-package io.github.dizzymii.folly.template;
+package io.github.follyworks.template;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;

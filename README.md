@@ -1,6 +1,6 @@
 # Folly Template
 
-The starting point for every mod under `io.github.dizzymii.folly`. NeoForge 1.21.1, Java 21, Gradle 8.14.
+The starting point for every mod under `io.github.follyworks`. NeoForge 1.21.1, Java 21, Gradle 8.14.
 
 It exists so that starting a new mod is a rename and a push. The build file gets reassembled from
 memory exactly once.
@@ -11,7 +11,7 @@ Hit "Use this template" on GitHub, clone it, then:
 
 1. `gradle.properties`, set `mod_id`, `mod_name`, `mod_description`, `mod_version`. Leave
    `mod_group_id` and `mod_license` alone.
-2. Rename the package leaf `src/main/java/io/github/dizzymii/folly/template/` to your mod id, and
+2. Rename the package leaf `src/main/java/io/github/follyworks/template/` to your mod id, and
    `TemplateMod.java` along with it. `MODID` in that class MUST match `mod_id` in gradle.properties,
    the build fails at resource processing if it doesn't (which is the point).
 3. Rename `src/main/resources/data/template/` to the same id.
