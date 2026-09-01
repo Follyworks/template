@@ -1,0 +1,27 @@
+name: Feature request
+description: Propose something new.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what-it-does
+    attributes:
+      label: One sentence, what does it do?
+      description: The player-facing answer.
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: What's the problem it solves?
+      description: What you were doing when you wished this existed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Balance thoughts, similar mods that do it, related issues.
+    validations:
+      required: false

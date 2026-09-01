@@ -1,0 +1,144 @@
+plugins {
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.neoforged.gradle.userdev' version '7.1.25'
+    id 'com.diffplug.spotless' version '6.25.0'
+}
+
+// STUDIO-6: semver in gradle.properties, Minecraft version appended as build metadata.
+// A version bump is one line in gradle.properties and nothing else.
+version = "${mod_version}+${minecraft_version}"
+group = mod_group_id
+
+repositories {
+    mavenLocal()
+}
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+    options.docEncoding = 'UTF-8'
+}
+
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', 'REGISTRIES'
+        systemProperty 'forge.logging.console.level', 'debug'
+        modSource project.sourceSets.main
+    }
+
+    client {
+        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+
+        // ./gradlew runClient -PquickPlayWorld="New World"
+        if (project.hasProperty('quickPlayWorld')) {
+            programArguments.addAll '--quickPlaySingleplayer', project.property('quickPlayWorld').toString()
+        }
+    }
+
+    server {
+        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        programArgument '--nogui'
+    }
+
+    gameTestServer {
+        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+    }
+
+    data {
+        programArguments.addAll '--mod', project.mod_id,
+                '--all',
+                '--output', file('src/generated/resources/').getAbsolutePath(),
+                '--existing', file('src/main/resources/').getAbsolutePath()
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+dependencies {
+    implementation "net.neoforged:neoforge:${neo_version}"
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.1"
+}
+
+// STUDIO-8: gradle spotlessApply formats, gradle check fails on drift.
+// ratchetFrom is deliberately unset - the template has no history to ratchet against,
+// and a whole-repo format on a fresh mod is free.
+spotless {
+    java {
+        target 'src/main/java/**/*.java'
+        // palantir over google-java-format: 120 columns, and it does not fight
+        // the long generic signatures NeoForge registries produce.
+        palantirJavaFormat('2.39.0')
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+        licenseHeader '/* SPDX-License-Identifier: MIT */\n'
+    }
+    format 'misc', {
+        target '*.md', '*.gradle', '.gitignore', '.gitattributes', '.editorconfig'
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+// a name listed here that is missing from gradle.properties fails the build
+tasks.withType(ProcessResources).configureEach {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/neoforge.mods.toml']) {
+        expand replaceProperties
+    }
+}
+
+// STUDIO-14: local file repo by default. Swap the url for GitHub Packages when
+// a mod first exposes an API other mods compile against.
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = 'localRepo'
+            url = "file://${project.projectDir}/repo"
+        }
+    }
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+
+test {
+    useJUnitPlatform()
+}

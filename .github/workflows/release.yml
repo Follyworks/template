@@ -1,0 +1,59 @@
+name: release
+
+# STUDIO-12: releasing is `git tag v1.2.0 && git push --tags`. Everything below is
+# derived - the version comes from the tag, the changelog from the commits since the
+# previous tag. Nothing is retyped, so nothing can disagree.
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & draft release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # generate-notes needs the full tag history
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The tag is the source of truth. If gradle.properties disagrees the release is
+      # mislabelled, and that is only ever caught by a user, so fail here instead.
+      - name: Check tag matches mod_version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          prop="$(grep -E '^mod_version=' gradle.properties | cut -d= -f2)"
+          if [ "$tag" != "$prop" ]; then
+            echo "::error::tag $tag does not match mod_version $prop in gradle.properties"
+            exit 1
+          fi
+
+      - name: Build
+        run: ./gradlew build --stacktrace --no-daemon
+
+      - name: Draft GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --draft \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes \
+            build/libs/*.jar
+
+      # STUDIO-13: publishing to Modrinth and CurseForge attaches here once the project
+      # slugs exist (STUDIO-16). Add the Minotaur + CurseForgeGradle plugins to
+      # build.gradle and a `./gradlew modrinth curseforge` step, with the tokens in
+      # repository secrets. Deliberately absent until there is a project to publish to -
+      # a step that silently no-ops is worse than one that is not there.

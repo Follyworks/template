@@ -1,0 +1,61 @@
+name: Bug report
+description: Something behaves wrong in-game.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fill in what you can. Logs and a clear repro save the most time.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Describe the bug and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. See the wrong thing
+    validations:
+      required: true
+
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod version
+      description: The full version string off the jar, including the +1.21.1 part.
+      placeholder: 1.2.0+1.21.1
+    validations:
+      required: true
+
+  - type: input
+    id: neoforge-version
+    attributes:
+      label: NeoForge version
+      placeholder: 21.1.228
+    validations:
+      required: true
+
+  - type: textarea
+    id: other-mods
+    attributes:
+      label: Other mods loaded
+      description: Paste your mod list, or say "none".
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / crash report
+      description: latest.log or the crash report. Drag and drop the file if it's large.
+      render: text
+    validations:
+      required: false
